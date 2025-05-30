@@ -35,7 +35,7 @@ async function calibrateThreshold(video: HTMLVideoElement, faceapiInstance: type
 
   if (count > 0) {
     const avgEAR = earSum / count;
-    BLINK_THRESHOLD = Math.max(0.25, avgEAR - 0.05); // Set threshold slightly below average open-eye EAR
+    BLINK_THRESHOLD = Math.max(0.25, avgEAR - 0.2); // Set threshold slightly below average open-eye EAR
     console.log(`Calibrated BLINK_THRESHOLD: ${BLINK_THRESHOLD}`);
   }
 }

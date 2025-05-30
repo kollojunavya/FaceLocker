@@ -24,7 +24,7 @@ export default function FacialRecognition({
     "pending" | "ready" | "scanning" | "verified" | "unknown" | "error"
   >("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(0); // Progress bar state
   const isMounted = useRef(true);
 
   const capturePhoto = (): string | null => {
@@ -79,19 +79,16 @@ export default function FacialRecognition({
     const loadModels = async () => {
       const MODEL_URL = "/models";
       try {
-        setProgress(10); // Start progress
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
         setStatus("ready");
-        setProgress(100); // Models loaded
       } catch (err) {
         console.error("FacialRecognition: Failed to load models:", err);
         setStatus("error");
         setErrorMessage("Failed to load facial recognition models");
-        setProgress(0);
       }
     };
 
@@ -177,12 +174,10 @@ export default function FacialRecognition({
     try {
       setStatus("scanning");
       setErrorMessage("Preparing to scan... Please get ready to blink.");
-      setProgress(20); // Initial scanning
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       setErrorMessage("Please blink to confirm liveness");
-      setProgress(40); // Waiting for blink
 
       let blinkDetected = false;
       const startTime = Date.now();
@@ -200,14 +195,23 @@ export default function FacialRecognition({
         if (result.blinkDetected) {
           blinkDetected = true;
           setErrorMessage("Blink detected! Verifying face...");
-          setProgress(60); // Blink detected
+          // Start progress bar animation
+          setProgress(0);
+          const progressInterval = setInterval(() => {
+            setProgress((prev) => {
+              if (prev >= 100) {
+                clearInterval(progressInterval);
+                return 100;
+              }
+              return prev + 2; // Increment progress by 2% every 50ms
+            });
+          }, 50);
           break;
         }
 
         if (result.error) {
           setErrorMessage(result.error);
           setStatus("error");
-          setProgress(0);
           onScanComplete(false);
           return;
         }
@@ -218,7 +222,6 @@ export default function FacialRecognition({
       if (!blinkDetected) {
         setStatus("error");
         setErrorMessage("Spoofing alert: No live image found");
-        setProgress(0);
         onScanComplete(false);
         return;
       }
@@ -229,12 +232,11 @@ export default function FacialRecognition({
         setErrorMessage(
           "No face detected. Please ensure your face is visible."
         );
-        setProgress(0);
+        setProgress(0); // Reset progress bar
         onScanComplete(false);
         return;
       }
 
-      setProgress(80); // Face detected, verifying
       const liveDescriptor = detection.descriptor;
       const refDescriptors = await loadReferenceDescriptors();
       const labeledDescriptors = refDescriptors.map(
@@ -249,12 +251,12 @@ export default function FacialRecognition({
       );
       if (bestMatch.label === "user" && bestMatch.distance < 0.6) {
         setStatus("verified");
-        setProgress(100); // Verification complete
+        setProgress(100); // Ensure progress bar completes
         onScanComplete(true);
       } else {
         setStatus("unknown");
         setErrorMessage("Unknown user found");
-        setProgress(0);
+        setProgress(0); // Reset progress bar
         const imageDataUrl = capturePhoto();
         if (imageDataUrl && userEmail) {
           await notify(imageDataUrl, userEmail);
@@ -265,80 +267,43 @@ export default function FacialRecognition({
       const message = err instanceof Error ? err.message : "Unknown error";
       setStatus("error");
       setErrorMessage(message);
-      setProgress(0);
+      setProgress(0); // Reset progress bar
       onScanComplete(false);
     } finally {
-      if (status !== "verified") setProgress(0);
       setStatus("ready");
     }
   };
 
   return (
     <div className="text-center">
-      {status === "pending" && (
-        <div>
-          <p>Loading...</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-        </div>
-      )}
+      {status === "pending" && <p>Loading...</p>}
       {status === "ready" && (
-        <div>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            onClick={recognizeFace}
-          >
-            Start Scanning
-          </button>
-        </div>
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          onClick={recognizeFace}
+        >
+          Start Scanning
+        </button>
       )}
       {status === "scanning" && (
         <div>
           <p>Scanning face... {errorMessage}</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
+          {progress > 0 && (
+            <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-50"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          )}
         </div>
       )}
-      {status === "verified" && (
-        <div>
-          <p className="text-green-500">User Verified</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-green-500 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-        </div>
-      )}
+      {status === "verified" && <p className="text-green-500">User Verified</p>}
       {status === "unknown" && (
-        <div>
-          <p className="text-red-500">Error: {errorMessage}</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-red-500 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-        </div>
+        <p className="text-red-500">Error: {errorMessage}</p>
       )}
       {status === "error" && (
-        <div>
-          <p className="text-red-500">Error: {errorMessage}</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-red-500 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-        </div>
+        <p className="text-red-500">Error: {errorMessage}</p>
       )}
     </div>
   );
