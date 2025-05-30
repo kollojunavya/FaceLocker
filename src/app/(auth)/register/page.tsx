@@ -141,7 +141,7 @@ export default function RegisterPage() {
                 <FormItem>
                   <FormLabel htmlFor="name">Full Name</FormLabel>
                   <FormControl>
-                    <Input id="name" placeholder="Turpu Saandeep Sai" {...field} />
+                    <Input id="name" placeholder="e.g; John" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -154,7 +154,7 @@ export default function RegisterPage() {
                 <FormItem>
                   <FormLabel htmlFor="email">Email Address</FormLabel>
                   <FormControl>
-                    <Input id="email" type="email" placeholder="saandeepsaiturpu@gmail.com" {...field} />
+                    <Input id="email" type="email" placeholder="example@gmail.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,7 +167,7 @@ export default function RegisterPage() {
                 <FormItem>
                   <FormLabel htmlFor="mobile">Mobile Number</FormLabel>
                   <FormControl>
-                    <Input id="mobile" type="tel" placeholder="e.g., 06304274003" {...field} />
+                    <Input id="mobile" type="tel" placeholder="e.g., 1234567895" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
