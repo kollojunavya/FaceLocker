@@ -179,7 +179,7 @@ export default function FacialRecognition({
 
       let blinkDetected = false;
       const startTime = Date.now();
-      const timeout = 10000; // 10 seconds
+      const timeout = 50000; // 10 seconds
 
       while (Date.now() - startTime < timeout) {
         if (!videoRef.current) {
